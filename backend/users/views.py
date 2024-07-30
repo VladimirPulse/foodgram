@@ -1,4 +1,4 @@
-"""Первый более менее рабочий"""
+"""Первый более менее рабочий."""
 
 
 from django.contrib.auth import get_user_model
@@ -19,11 +19,14 @@ User = get_user_model()
 
 # @method_decorator(csrf_exempt, name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
+    """Класс представления пользователя."""
+
     queryset = User.objects.all()
     http_method_names = ['get', 'post']
     pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):
+        """Обработка запросов."""
         if self.request.method == 'GET':
             return UserSerializer
         elif self.request.method == 'POST':
@@ -31,6 +34,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=False)
     def set_password(self, request):
+        """Установка пароля."""
         new_password = request.data.get('new_password')
         current_password = request.data.get('current_password')
         if not new_password or not request.user.check_password(
@@ -62,11 +66,13 @@ class PersonalProfileViewSet(
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request):
+        """Изменение пользователя."""
         user = get_object_or_404(User, username=request.user.username)
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def partial_update(self, request):
+        """Добавление пользователя."""
         user = get_object_or_404(User, username=request.user.username)
         serializer = self.get_serializer(
             user, data=request.data, partial=True

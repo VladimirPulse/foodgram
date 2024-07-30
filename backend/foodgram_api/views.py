@@ -22,6 +22,7 @@ User = get_user_model()
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Класс тегов."""
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
@@ -41,9 +42,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     )
 
     def dispatch(self, request, *args, **kwargs):
+        """Распределение запросов."""
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        """Запрос ингридиентов."""
         name = self.request.query_params.get('name', None)
         if name:
             queryset = Ingredient.objects.filter(
@@ -71,6 +74,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
 
     def get_queryset(self):
+        """Запрос рецептов."""
         queryset = Recipe.objects.all()
         tags = self.request.query_params.getlist('tags')
         if tags:
@@ -90,6 +94,7 @@ class SubscrViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'delete')
 
     def list(self, request, *args, **kwargs):
+        """Список подписчиков."""
         queryset = self.get_queryset()
         recipes_limit = request.query_params.get('recipes_limit')
         page = self.paginate_queryset(queryset)
@@ -107,6 +112,7 @@ class SubscrViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def subscribe(self, request, pk=None):
+        """Подписчик."""
         user = request.user
         subscribe = get_object_or_404(User, pk=pk)
         if subscribe == user:
@@ -129,6 +135,7 @@ class SubscrViewSet(viewsets.ModelViewSet):
 
     @subscribe.mapping.delete
     def subscribe_delete(self, request, pk=None):
+        """Удаление подписчика."""
         subscribe = get_object_or_404(User, pk=pk)
         user = request.user
         num_deleted, _ = Subscriptions.objects.filter(
@@ -141,6 +148,8 @@ class SubscrViewSet(viewsets.ModelViewSet):
 
 
 class ShoppingListViewSet(viewsets.ModelViewSet):
+    """Класс списка."""
+
     queryset = ShoppingList.objects.all()
     serializer_class = ShoppingListSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -149,6 +158,7 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
+        """Загрузка списка."""
         file_path = ShoppingListDownloadService.download_shopping_list(
             request.user,
         )
@@ -159,6 +169,7 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def shopping_cart(self, request, pk=None):
+        """Список."""
         try:
             recipe_instance = Recipe.objects.get(pk=pk)
         except status.HTTP_400_BAD_REQUEST:
@@ -181,6 +192,7 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['delete'])
     def shopping_delete(self, request, pk=None):
+        """Удаление списка."""
         recipe = get_object_or_404(Recipe, pk=pk)
         num_deleted, _ = ShoppingList.objects.filter(
             user=request.user, recipe=recipe).delete()
@@ -192,12 +204,15 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
+    """Класс избранного."""
+
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
     @action(detail=True, methods=['POST'])
     def favorite(self, request, pk=None):
+        """Избранное."""
         try:
             recipe = self.get_object()
         except status.HTTP_400_BAD_REQUEST:
@@ -218,6 +233,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['DELETE'])
     def favorite_delete(self, request, pk=None):
+        """Удаление избранного."""
         recipe = self.get_object()
         user = request.user
         num_deleted, _ = Favorite.objects.filter(

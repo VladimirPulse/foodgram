@@ -1,11 +1,13 @@
+"""Модуль моделей."""
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils import timezone
 
 User = get_user_model()
 
 
 class Tag(models.Model):
+    """Модель тегов."""
+
     name = models.CharField(max_length=64)
     color = models.CharField(max_length=16)
     slug = models.SlugField(
@@ -19,28 +21,38 @@ class Tag(models.Model):
     )
 
     class Meta:
+        """Тонкая настройка."""
+
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
         ordering = ['name']
 
     def __str__(self):
+        """Настройка."""
         return self.name
 
 
 class Ingredient(models.Model):
+    """Модель ингридиентов."""
+
     name = models.CharField(max_length=200, verbose_name='название')
     measurement_unit = models.TextField(verbose_name='измеряемая единица')
 
     class Meta:
+        """Тонкая настройка."""
+
         verbose_name = 'ингридиент'
         verbose_name_plural = 'ингридиенты'
         ordering = ['name']
 
     def __str__(self):
+        """Настройка."""
         return self.name
 
 
 class Recipe(models.Model):
+    """Модель рецептов."""
+
     name = models.CharField(max_length=200, verbose_name='название')
     text = models.TextField(verbose_name='Описание')
     author = models.ForeignKey(
@@ -72,15 +84,20 @@ class Recipe(models.Model):
     )
 
     class Meta:
+        """Тонкая настройка."""
+
         verbose_name = 'рецепт'
         verbose_name_plural = 'рецепты'
         ordering = ['-created_at']
 
     def __str__(self):
+        """Настройка."""
         return self.name
 
 
 class IngredientRecipe(models.Model):
+    """Модель ингридиента рецепта."""
+
     ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField()
@@ -102,6 +119,7 @@ class Subscriptions(models.Model):
 
     class Meta:
         """Уточняющий класс."""
+
         verbose_name = 'подписчик'
         verbose_name_plural = 'подписчики'
 
@@ -127,12 +145,16 @@ class Favorite(models.Model):
     )
 
     class Meta:
+        """Тонкая настройка."""
+
         verbose_name = 'избранное'
         verbose_name_plural = 'список избранного'
         ordering = ['user']
 
 
 class ShoppingList(models.Model):
+    """Модель корзины."""
+
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         verbose_name='пользователь'
@@ -143,6 +165,8 @@ class ShoppingList(models.Model):
     )
 
     class Meta:
+        """Тонкая настройка."""
+
         verbose_name = 'корзина'
         verbose_name_plural = 'список покупок'
         ordering = ['user']

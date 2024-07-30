@@ -1,3 +1,4 @@
+"""Модуль админки пользователя."""
 from django.contrib import admin
 
 from .models import MyUser
@@ -5,6 +6,8 @@ from .models import MyUser
 
 @admin.register(MyUser)
 class RecipeAdmin(admin.ModelAdmin):
+    """Класс админки пользователя."""
+
     list_display = (
         'email',
         'username',
