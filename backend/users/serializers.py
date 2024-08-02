@@ -1,6 +1,4 @@
-"""Модуль сериалайзеров пользователя."""
 from django.contrib.auth import get_user_model
-# from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
@@ -55,7 +53,6 @@ class UserSelfSerializer(serializers.ModelSerializer):
     """Сериализатор для личного профиля."""
 
     is_subscribed = serializers.BooleanField()
-    # is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         """Тонкая настройка."""

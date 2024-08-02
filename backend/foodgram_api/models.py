@@ -1,8 +1,10 @@
-"""Модуль моделей."""
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 User = get_user_model()
+MIN_NUMES = 1
+MAX_NUMES = 32000
 
 
 class Tag(models.Model):
@@ -57,7 +59,7 @@ class Recipe(models.Model):
     text = models.TextField(verbose_name='Описание')
     author = models.ForeignKey(
         User,
-        related_name='author',
+        related_name='author_recipe',
         on_delete=models.CASCADE,
         verbose_name='автор')
     tags = models.ManyToManyField(
@@ -72,8 +74,12 @@ class Recipe(models.Model):
         null=True,
         default=None
     )
-    cooking_time = models.IntegerField(
-        verbose_name='время приготовления (в минутах)')
+    cooking_time = models.PositiveSmallIntegerField(
+        verbose_name='время приготовления (в минутах)',
+        validators=[
+            MinValueValidator(MIN_NUMES),
+            MaxValueValidator(MAX_NUMES)
+        ])
     is_favorited = models.BooleanField(
         'избранное', default=False)
     is_in_shopping_cart = models.BooleanField(
@@ -100,7 +106,21 @@ class IngredientRecipe(models.Model):
 
     ingredients = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    amount = models.PositiveSmallIntegerField()
+    amount = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(MIN_NUMES),
+            MaxValueValidator(MAX_NUMES)
+        ]
+    )
+
+    class Meta:
+        """Тонкая настройка."""
+
+        ordering = ['ingredients.name']
+
+    def __str__(self):
+        """Настройка."""
+        return self.ingredients.name
 
 
 class Subscriptions(models.Model):
@@ -122,12 +142,17 @@ class Subscriptions(models.Model):
 
         verbose_name = 'подписчик'
         verbose_name_plural = 'подписчики'
+        ordering = ['subscribers']
 
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "subscribers"], name="uq_user_subscribers"
             )
         ]
+
+    def __str__(self):
+        """Настройка."""
+        return self.user
 
 
 class Favorite(models.Model):
@@ -151,16 +176,22 @@ class Favorite(models.Model):
         verbose_name_plural = 'список избранного'
         ordering = ['user']
 
+    def __str__(self):
+        """Настройка."""
+        return self.user
+
 
 class ShoppingList(models.Model):
     """Модель корзины."""
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
+        related_name='user_shopp',
         verbose_name='пользователь'
     )
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
+        related_name='recipe_shopp',
         verbose_name='рецепт'
     )
 
@@ -170,3 +201,7 @@ class ShoppingList(models.Model):
         verbose_name = 'корзина'
         verbose_name_plural = 'список покупок'
         ordering = ['user']
+
+    def __str__(self):
+        """Настройка."""
+        return self.user

@@ -32,7 +32,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """Класс ингридиентов."""
+    """Класс ингредиентов."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -46,7 +46,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        """Запрос ингридиентов."""
+        """Запрос ингредиентов."""
         name = self.request.query_params.get('name', None)
         if name:
             queryset = Ingredient.objects.filter(

@@ -1,4 +1,3 @@
-"""Модуль сериалайзеров."""
 import base64
 
 from django.contrib.auth import get_user_model
@@ -6,42 +5,44 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from foodgram_api.models import (Favorite, Ingredient, IngredientRecipe,
-                                 Recipe, ShoppingList, Subscriptions, Tag)
+from foodgram_api.models import (MAX_NUMES, MIN_NUMES, Favorite, Ingredient,
+                                 IngredientRecipe, Recipe, ShoppingList,
+                                 Subscriptions, Tag)
 from users.serializers import UserSelfSerializer
+from .services import create_recipe_ingredients
 
 User = get_user_model()
+MAX_LENGTH = 200
 
-
-def val(data, field, model):
-    """Общая валидация."""
-    elms_data = data.get(field)
-    if elms_data == [] or elms_data is None:
-        raise serializers.ValidationError(
-            f'Заполните поле {field} рецепта'
-        )
-    a = []
-    for elm_data in elms_data:
-        if field == 'ingredients':
-            if model.objects.filter(id=elm_data.get('id')).exists():
-                a.append(elm_data.get('id'))
-            else:
-                raise serializers.ValidationError(
-                    'Указанный ингридиент не существует'
-                )
-        else:
-            if model.objects.filter(id=elm_data.id).exists():
-                a.append(elm_data.id)
-            else:
-                raise serializers.ValidationError(
-                    f'Указанный {field} не существует'
-                )
-    b = list(set(a))
-    if a != b:
-        raise serializers.ValidationError(
-            f'Повторяющиеся {field}'
-        )
-    return data
+# def val(data, field, model):
+#     """Общая валидация."""
+#     elms_data = data.get(field)
+#     if elms_data == [] or elms_data is None:
+#         raise serializers.ValidationError(
+#             f'Заполните поле {field} рецепта'
+#         )
+#     a = []
+#     for elm_data in elms_data:
+#         if field == 'ingredients':
+#             if model.objects.filter(id=elm_data.get('id')).exists():
+#                 a.append(elm_data.get('id'))
+#             else:
+#                 raise serializers.ValidationError(
+#                     'Указанный ингридиент не существует'
+#                 )
+#         else:
+#             if model.objects.filter(id=elm_data.id).exists():
+#                 a.append(elm_data.id)
+#             else:
+#                 raise serializers.ValidationError(
+#                     f'Указанный {field} не существует'
+#                 )
+#     b = list(set(a))
+#     if a != b:
+#         raise serializers.ValidationError(
+#             f'Повторяющиеся {field}'
+#         )
+#     return data
 
 
 class Hex2NameColor(serializers.Field):
@@ -100,6 +101,7 @@ class IngRecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер для ингридиента."""
 
     id = serializers.IntegerField()
+    amount = serializers.IntegerField(max_value=MAX_NUMES, min_value=MIN_NUMES)
 
     class Meta:
         """Тонкая настойка класса."""
@@ -107,13 +109,13 @@ class IngRecipeSerializer(serializers.ModelSerializer):
         model = IngredientRecipe
         fields = ('id', 'amount')
 
-    def validate_amount(self, value):
-        """Валидация."""
-        if value < 1:
-            raise serializers.ValidationError(
-                'Количество ингридиента не может быть меньше 1'
-            )
-        return value
+    # def validate_amount(self, value):
+    #     """Валидация."""
+    #     if value < 1:
+    #         raise serializers.ValidationError(
+    #             'Количество ингридиента не может быть меньше 1'
+    #         )
+    #     return value
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -148,16 +150,17 @@ class SubscrPostSerializer(serializers.ModelSerializer):
         """Представление."""
         recipes_limit = self.context.get('recipes_limit')
         serializer = UserSelfSerializer(instance.subscribers).data
-        recipes = instance.subscribers.author.all()
+        recipes = instance.subscribers.author_recipe.all()
         if recipes_limit:
             recipes = recipes[:int(recipes_limit)]
         recipes_list = []
-        for recipe_ecz in recipes:
-            recipe = RecipeSerializer(recipe_ecz).data
+        for recipe in recipes:
+            recipe = RecipeSerializer(recipe).data
             recipes_list.append(recipe)
         serializer['recipes'] = recipes_list
-        recipes_count = Recipe.objects.filter(
-            author=instance.subscribers).count()
+        recipes_count = recipes.count()
+        # recipes_count = Recipe.objects.filter(
+        #     author=instance.subscribers).count()
         serializer['recipes_count'] = recipes_count
         return serializer
 
@@ -166,7 +169,8 @@ class RecipeSerializerGet(serializers.ModelSerializer):
     """Сериалайзер для рецептов."""
 
     author = UserSelfSerializer()
-    ingredients = serializers.SerializerMethodField()
+    ingredients = IngRecipeSerializer()
+    # ingredients = serializers.SerializerMethodField()
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
 
@@ -179,16 +183,16 @@ class RecipeSerializerGet(serializers.ModelSerializer):
                   'name', 'text', 'cooking_time']
         model = Recipe
 
-    def get_ingredients(self, obj):
-        """Запрос по ингридиентам."""
-        ing_recipe_instances = IngredientRecipe.objects.filter(recipe=obj.id)
-        ingredients_data = []
-        for ing_recipe_instance in ing_recipe_instances:
-            ingredient_data = IngredientSerializer(
-                ing_recipe_instance.ingredients).data
-            ingredient_data['amount'] = ing_recipe_instance.amount
-            ingredients_data.append(ingredient_data)
-        return ingredients_data
+    # def get_ingredients(self, obj):
+    #     """Запрос по ингридиентам."""
+    #     ing_recipe_instances = IngredientRecipe.objects.filter(recipe=obj.id)
+    #     ingredients_data = []
+    #     for ing_recipe_instance in ing_recipe_instances:
+    #         ingredient_data = IngredientSerializer(
+    #             ing_recipe_instance.ingredients).data
+    #         ingredient_data['amount'] = ing_recipe_instance.amount
+    #         ingredients_data.append(ingredient_data)
+    #     return ingredients_data
 
     def to_representation(self, instance):
         """Представление."""
@@ -205,9 +209,9 @@ class RecipeSerializerPost(serializers.ModelSerializer):
     ingredients = IngRecipeSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
-    cooking_time = serializers.IntegerField()
+    cooking_time = serializers.IntegerField(max_value=MAX_NUMES, min_value=MIN_NUMES)
     text = serializers.CharField()
-    name = serializers.CharField(max_length=200)
+    name = serializers.CharField(max_length=MAX_LENGTH)
 
     class Meta:
         """Тонкая настойка класса."""
@@ -216,27 +220,27 @@ class RecipeSerializerPost(serializers.ModelSerializer):
                   'name', 'text', 'cooking_time']
         model = Recipe
 
-    def validate_cooking_time(self, value):
-        """Проверка времени."""
-        if value < 1:
-            raise serializers.ValidationError(
-                'Заполните поле cooking_time рецепта корректно (больше 1)'
-            )
-        return value
+    # def validate_cooking_time(self, value):
+    #     """Проверка времени."""
+    #     if value < 1:
+    #         raise serializers.ValidationError(
+    #             'Заполните поле cooking_time рецепта корректно (больше 1)'
+    #         )
+    #     return value
 
-    def validate(self, data):
-        """Валидация."""
-        val(
-            data=data,
-            field='ingredients',
-            model=Ingredient
-        )
-        val(
-            data=data,
-            field='tags',
-            model=Tag
-        )
-        return data
+    # def validate(self, data):
+    #     """Валидация."""
+    #     val(
+    #         data=data,
+    #         field='ingredients',
+    #         model=Ingredient
+    #     )
+    #     val(
+    #         data=data,
+    #         field='tags',
+    #         model=Tag
+    #     )
+    #     return data
 
     def to_representation(self, instance):
         """Представление."""
@@ -250,17 +254,42 @@ class RecipeSerializerPost(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
-        for ingredient_data in ingredients_data:
-            IngredientRecipe.objects.get_or_create(
-                ingredients=get_object_or_404(
-                    Ingredient, id=ingredient_data.get('id')),
-                recipe=recipe,
-                amount=ingredient_data.get('amount')
-            )
+        create_recipe_ingredients(recipe, ingredients_data)
+            # IngredientRecipe.objects.get_or_create(
+            #     ingredients=get_object_or_404(
+            #         Ingredient, id=ingredient_data.get('id')),
+            #     recipe=recipe,
+            #     amount=ingredient_data.get('amount')
+            # )
         return recipe
 
+    # def update(self, instance, validated_data):
+    #     """Добавление."""
+    #     instance.author = validated_data.get('author', instance.author)
+    #     instance.image = validated_data.get('image', instance.image)
+    #     instance.name = validated_data.get('name', instance.name)
+    #     instance.text = validated_data.get('text', instance.text)
+    #     instance.cooking_time = validated_data.get(
+    #         'cooking_time', instance.cooking_time)
+    #     tags_data = validated_data.pop('tags')
+    #     ingredients = validated_data.pop('ingredients')
+    #     lst = []
+    #     for ingredient in ingredients:
+    #         current_ingredient, status = (
+    #             IngredientRecipe.objects.get_or_create(
+    #                 ingredients=get_object_or_404(
+    #                     Ingredient, id=ingredient.get('id')),
+    #                 recipe=instance,
+    #                 amount=ingredient.get('amount')))
+    #         lst.append(current_ingredient.ingredients)
+    #     instance.ingredients.set(lst)
+    #     lst_tags = []
+    #     for tag in tags_data:
+    #         lst_tags.append(tag)
+    #     instance.tags.set(lst_tags)
+    #     instance.save()
+    #     return instance
     def update(self, instance, validated_data):
-        """Добавление."""
         instance.author = validated_data.get('author', instance.author)
         instance.image = validated_data.get('image', instance.image)
         instance.name = validated_data.get('name', instance.name)
@@ -268,21 +297,10 @@ class RecipeSerializerPost(serializers.ModelSerializer):
         instance.cooking_time = validated_data.get(
             'cooking_time', instance.cooking_time)
         tags_data = validated_data.pop('tags')
+        instance.tags.set(tags_data)
         ingredients = validated_data.pop('ingredients')
-        lst = []
-        for ingredient in ingredients:
-            current_ingredient, status = (
-                IngredientRecipe.objects.get_or_create(
-                    ingredients=get_object_or_404(
-                        Ingredient, id=ingredient.get('id')),
-                    recipe=instance,
-                    amount=ingredient.get('amount')))
-            lst.append(current_ingredient.ingredients)
-        instance.ingredients.set(lst)
-        lst_tags = []
-        for tag in tags_data:
-            lst_tags.append(tag)
-        instance.tags.set(lst_tags)
+        instance.ingredients.clear()
+        create_recipe_ingredients(instance, ingredients)
         instance.save()
         return instance
 

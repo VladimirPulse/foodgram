@@ -1,10 +1,7 @@
-"""Первый более менее рабочий."""
-
+from http.client import BAD_REQUEST, OK, UNAUTHORIZED
 
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-# from django.utils.decorators import method_decorator
-# from django.views.decorators.csrf import csrf_exempt
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
@@ -17,7 +14,6 @@ from .serializers import (CustomUserCreateSerializer, UserSelfSerializer,
 User = get_user_model()
 
 
-# @method_decorator(csrf_exempt, name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
     """Класс представления пользователя."""
 
@@ -29,7 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Обработка запросов."""
         if self.request.method == 'GET':
             return UserSerializer
-        elif self.request.method == 'POST':
+        if self.request.method == 'POST':
             return CustomUserCreateSerializer
 
     @action(methods=['post'], detail=False)
@@ -40,18 +36,18 @@ class UserViewSet(viewsets.ModelViewSet):
         if not new_password or not request.user.check_password(
                 current_password):
             return Response(
-                status=400,
+                status=BAD_REQUEST,
                 data={'message': 'Вы ввели неверные или пустые данные'}
             )
         if not request.user.is_authenticated:
             return Response(
-                status=401,
+                status=UNAUTHORIZED,
                 data={'message': 'Пользователь не авторизован'}
             )
         user = request.user
         user.set_password(new_password)
         user.save()
-        return Response(status=204, data={'message': 'Пароль успешно изменен'})
+        return Response(status=OK, data={'message': 'Пароль успешно изменен'})
 
 
 class PersonalProfileViewSet(
