@@ -116,7 +116,7 @@ class IngredientRecipe(models.Model):
     class Meta:
         """Тонкая настройка."""
 
-        ordering = ['ingredients.name']
+        ordering = ['ingredients']
 
     def __str__(self):
         """Настройка."""
