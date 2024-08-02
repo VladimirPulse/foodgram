@@ -1,7 +1,8 @@
 from collections import defaultdict
 
-from .models import Favorite, ShoppingList, Subscriptions
+from django.shortcuts import get_object_or_404
 
+from .models import Ingredient, IngredientRecipe, ShoppingList
 
 # class FavoriteService:
 #     """Класс логики избранного."""
@@ -79,26 +80,8 @@ class ShoppingListDownloadService:
         return file_path
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-from django.shortcuts import get_object_or_404
-from .models import Ingredient, IngredientRecipe
-
 def create_recipe_ingredients(recipe, ingredients_data):
+    """Создание рецепта."""
     ingredients_to_create = []
     for ingredient_data in ingredients_data:
         ingredient_id = ingredient_data.get('id')

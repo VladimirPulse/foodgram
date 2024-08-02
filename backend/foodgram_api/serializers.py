@@ -2,14 +2,14 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
+from .services import create_recipe_ingredients
 from foodgram_api.models import (MAX_NUMES, MIN_NUMES, Favorite, Ingredient,
                                  IngredientRecipe, Recipe, ShoppingList,
                                  Subscriptions, Tag)
 from users.serializers import UserSelfSerializer
-from .services import create_recipe_ingredients
 
 User = get_user_model()
 MAX_LENGTH = 200
@@ -209,7 +209,8 @@ class RecipeSerializerPost(serializers.ModelSerializer):
     ingredients = IngRecipeSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
-    cooking_time = serializers.IntegerField(max_value=MAX_NUMES, min_value=MIN_NUMES)
+    cooking_time = serializers.IntegerField(
+        max_value=MAX_NUMES, min_value=MIN_NUMES)
     text = serializers.CharField()
     name = serializers.CharField(max_length=MAX_LENGTH)
 
@@ -255,12 +256,12 @@ class RecipeSerializerPost(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
         create_recipe_ingredients(recipe, ingredients_data)
-            # IngredientRecipe.objects.get_or_create(
-            #     ingredients=get_object_or_404(
-            #         Ingredient, id=ingredient_data.get('id')),
-            #     recipe=recipe,
-            #     amount=ingredient_data.get('amount')
-            # )
+        # IngredientRecipe.objects.get_or_create(
+        #     ingredients=get_object_or_404(
+        #         Ingredient, id=ingredient_data.get('id')),
+        #     recipe=recipe,
+        #     amount=ingredient_data.get('amount')
+        # )
         return recipe
 
     # def update(self, instance, validated_data):
