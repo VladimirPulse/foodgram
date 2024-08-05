@@ -1,4 +1,4 @@
-from http.client import BAD_REQUEST, OK, UNAUTHORIZED
+from http.client import BAD_REQUEST, NO_CONTENT, UNAUTHORIZED
 
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -47,7 +47,9 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         user.set_password(new_password)
         user.save()
-        return Response(status=OK, data={'message': 'Пароль успешно изменен'})
+        return Response(
+            status=NO_CONTENT,
+            data={'message': 'Пароль успешно изменен'})
 
 
 class PersonalProfileViewSet(
