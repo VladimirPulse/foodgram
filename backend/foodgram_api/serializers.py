@@ -183,13 +183,14 @@ class RecipeSerializerPost(serializers.ModelSerializer):
 
     def validate(self, data):
         """Валидация."""
-        # import pdb; pdb.set_trace()
         ingredients = data.get('ingredients')
         if not ingredients:
             raise serializers.ValidationError(
                 'Заполните поле ingredients рецепта'
             )
-        ingredient_ids = [ingredient.get('id').id for ingredient in ingredients]
+        ingredient_ids = [
+            ingredient.get('id').id for ingredient in ingredients
+        ]
         existing_ingr_ids = set(
             Ingredient.objects.filter(
                 id__in=ingredient_ids
