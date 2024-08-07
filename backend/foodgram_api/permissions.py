@@ -1,4 +1,3 @@
-"""Модуль разрешений и доступов."""
 from rest_framework import permissions
 
 

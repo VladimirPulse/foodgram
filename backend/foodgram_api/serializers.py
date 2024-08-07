@@ -183,42 +183,44 @@ class RecipeSerializerPost(serializers.ModelSerializer):
 
     def validate(self, data):
         """Валидация."""
-        elms_data = data.get('ingredients')
-        if elms_data == [] or elms_data is None:
+        # import pdb; pdb.set_trace()
+        ingredients = data.get('ingredients')
+        if not ingredients:
             raise serializers.ValidationError(
                 'Заполните поле ingredients рецепта'
             )
-        a = []
-        for elm_data in elms_data:
-            if Ingredient.objects.filter(id=elm_data['id'].id).exists():
-                a.append(elm_data['id'].id)
-            else:
+        ingredient_ids = [ingredient.get('id').id for ingredient in ingredients]
+        existing_ingr_ids = set(
+            Ingredient.objects.filter(
+                id__in=ingredient_ids
+            ).values_list('id', flat=True))
+        for ingredient_id in ingredient_ids:
+            if ingredient_id not in existing_ingr_ids:
                 raise serializers.ValidationError(
                     'Указанный ингредиент не существует'
                 )
-        b = list(set(a))
-        if a != b:
-            raise serializers.ValidationError(
-                'Повторяющиеся ingredients'
-            )
-        elms_data = data.get('tags')
-        if elms_data == [] or elms_data is None:
+            if len(existing_ingr_ids) != len(ingredient_ids):
+                raise serializers.ValidationError(
+                    'Повторяющиеся ingredients'
+                )
+        tags = data.get('tags')
+        if not tags:
             raise serializers.ValidationError(
                 'Заполните поле tags рецепта'
             )
-        a = []
-        for elm_data in elms_data:
-            if Tag.objects.filter(id=elm_data.id).exists():
-                a.append(elm_data.id)
-            else:
+        tags_ids = [tag.id for tag in tags]
+        existing_tag_ids = set(
+            Tag.objects.filter(
+                id__in=tags_ids
+            ).values_list('id', flat=True))
+        for tag_id in tags_ids:
+            if tag_id not in existing_tag_ids:
                 raise serializers.ValidationError(
-                    'Указанный тэг не существует'
+                    'Указанный tag не существует')
+            if len(existing_tag_ids) != len(tags_ids):
+                raise serializers.ValidationError(
+                    'Повторяющиеся tags'
                 )
-        b = list(set(a))
-        if a != b:
-            raise serializers.ValidationError(
-                'Повторяющиеся tags'
-            )
         return data
 
     def to_representation(self, instance):

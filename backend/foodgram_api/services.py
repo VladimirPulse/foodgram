@@ -24,7 +24,6 @@ class ShoppingListDownloadService:
         """Создание списка корзины."""
         shopping_list = user.user_shopp.all()
         shopping_list_data = defaultdict(int)
-
         for item in shopping_list:
             ingredients = item.recipe.ingredientrecipe_set.all()
             for ingredient in ingredients:

@@ -1,4 +1,3 @@
-"""Модуль пагинации."""
 from rest_framework.pagination import PageNumberPagination
 
 
