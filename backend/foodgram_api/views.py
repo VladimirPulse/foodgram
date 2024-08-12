@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -70,15 +71,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         'is_in_shopping_cart'
     )
 
+    # def get_queryset(self):
+    #     """Запрос рецептов."""
+    #     queryset = Recipe.objects.all()
+    #     tags = self.request.query_params.getlist('tags')
+    #     if tags:
+    #         tag_ids = Tag.objects.filter(
+    #             slug__in=tags).values_list('id', flat=True)
+    #         queryset = queryset.filter(tags__id__in=tag_ids)
+    #     return queryset
+
     def get_queryset(self):
         """Запрос рецептов."""
         queryset = Recipe.objects.all()
         tags = self.request.query_params.getlist('tags')
         if tags:
-            tag_ids = Tag.objects.filter(
-                slug__in=tags).values_list('id', flat=True)
-            queryset = queryset.filter(tags__id__in=tag_ids)
-        return queryset
+            queryset = queryset.filter(tags__slug__in=tags)
+            queryset = queryset.annotate(
+                tag_count=Count('tags')
+            ).filter(tag_count=len(tags))
+        return queryset.distinct()
 
 
 class SubscrViewSet(viewsets.ModelViewSet):
